@@ -15,7 +15,7 @@ export class PatientController {
   //  get all patients
   @Get()
   async findAll() {
-    return this.patientService.findAll();
+    return this.patientService.getAllPatients();
   }
 
   //  get a specific patient by id

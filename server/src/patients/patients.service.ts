@@ -15,14 +15,21 @@ export class PatientService {
   }
 
   // get all patients method
-  async findAll(): Promise<Patient[]> {
-    return this.prisma.patient.findMany();  
+  async getAllPatients() {
+    return this.prisma.patient.findMany({
+      include: {
+        dietChart: true, 
+      },
+    });
   }
 
   //  get a specific patient by ID method
   async findOne(id: string): Promise<Patient | null> {
     return this.prisma.patient.findUnique({
       where: { id },  
+      include: {
+        dietChart: true, 
+      },
     });
   }
 
