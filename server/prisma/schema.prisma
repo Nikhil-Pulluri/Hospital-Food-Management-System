@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Patient {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  age        Int
+  gender     String
+  contact    String
+  emergency  String
+  roomNumber String
+  bedNumber  String
+  floor      String
+  allergies  String[]
+  disease    String
+  dietChart  DietChart[]
+}
+
+model DietChart {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+  morning   String
+  evening   String
+  night     String
+
+  DeliveryStatus DeliveryStatus[]
+}
+
+model PantryStaff {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  contact  String
+  location String
+}
+
+model DeliveryPersonnel {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  contact String
+}
+
+model DeliveryStatus {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  dietChartId   String
+  dietChart     DietChart @relation(fields: [dietChartId], references: [id])
+  deliveryTime  DateTime
+  status        String
+  deliveryNotes String?
+}
