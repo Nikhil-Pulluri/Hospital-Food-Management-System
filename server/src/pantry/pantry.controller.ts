@@ -37,9 +37,9 @@ export class PantryController {
 
   @Post('assign-task')
   async assignTask(
-      @Body() { pantryStaffId, description }: { pantryStaffId: string; description: string },
+      @Body() { pantryStaffId, dietChartId, description }: { pantryStaffId: string; dietChartId : string ; description: string },
   ) {
-      return this.pantryService.assignTask(pantryStaffId, description);
+      return this.pantryService.assignTask(pantryStaffId, dietChartId, description);
   }
 
 

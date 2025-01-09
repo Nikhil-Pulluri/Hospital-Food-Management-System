@@ -16,10 +16,18 @@ export class PantryService {
 
   // Get all pantry staff
   async findAll() {
-    return this.prisma.pantryStaff.findMany(
-      { include: { tasks: true } }
-    );
+    return this.prisma.pantryStaff.findMany({
+      include: {
+        tasks: {
+          include: {
+            dietChart: true,  // Include diet chart if exists
+          },
+        },
+      },
+    });
   }
+  
+  
 
   // Get a single pantry staff by ID
   async findOne(id: string) {
@@ -62,21 +70,40 @@ export class PantryService {
   }
 
 
-  async assignTask(pantryStaffId: string, description: string) {
-    return this.prisma.pantryTask.create({
-        data: {
-            pantryStaffId,
-            description,
-            status: 'Pending', // Default status
-        },
+  async assignTask(pantryStaffId: string, dietChartId: string, description: string) {
+    // Validate Pantry Staff existence
+    const pantryStaff = await this.prisma.pantryStaff.findUnique({
+      where: { id: pantryStaffId },
     });
-
+    if (!pantryStaff) {
+      throw new Error('Pantry staff not found');
+    }
+  
+    // Validate Diet Chart existence
+    const dietChart = await this.prisma.dietChart.findUnique({
+      where: { id: dietChartId },
+    });
+    if (!dietChart) {
+      throw new Error('Diet chart not found');
+    }
+  
+    // Create the Pantry Task
+    return this.prisma.pantryTask.create({
+      data: {
+        pantryStaffId,
+        dietChartId,
+        description,
+        status: 'Pending', // Default status
+      },
+    });
   }
+  
 
   async getTasksForPantryStaff(pantryStaffId: string) {
     return this.prisma.pantryTask.findMany({
         where: { pantryStaffId },
         orderBy: { assignedAt: 'desc' },
+        include: { dietChart: true },
     });
   }
 
