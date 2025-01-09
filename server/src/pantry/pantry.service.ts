@@ -16,7 +16,9 @@ export class PantryService {
 
   // Get all pantry staff
   async findAll() {
-    return this.prisma.pantryStaff.findMany();
+    return this.prisma.pantryStaff.findMany(
+      { include: { tasks: true } }
+    );
   }
 
   // Get a single pantry staff by ID
@@ -58,4 +60,33 @@ export class PantryService {
       where: { id },
     });
   }
+
+
+  async assignTask(pantryStaffId: string, description: string) {
+    return this.prisma.pantryTask.create({
+        data: {
+            pantryStaffId,
+            description,
+            status: 'Pending', // Default status
+        },
+    });
+
+  }
+
+  async getTasksForPantryStaff(pantryStaffId: string) {
+    return this.prisma.pantryTask.findMany({
+        where: { pantryStaffId },
+        orderBy: { assignedAt: 'desc' },
+    });
+  }
+
+  async updateTaskStatus(taskId: string, status: string) {
+    return this.prisma.pantryTask.update({
+        where: { id: taskId },
+        data: { status },
+    });
+  }
+
+
+
 }

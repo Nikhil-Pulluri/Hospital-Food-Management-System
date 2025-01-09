@@ -35,15 +35,26 @@ model DietChart {
   morning   String
   evening   String
   night     String
+  notes     String?
 
   DeliveryStatus DeliveryStatus[]
 }
 
 model PantryStaff {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  id       String       @id @default(auto()) @map("_id") @db.ObjectId
   name     String
   contact  String
   location String
+  tasks    PantryTask[]
+}
+
+model PantryTask {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  description   String
+  status        String
+  assignedAt    DateTime    @default(now())
+  pantryStaffId String
+  pantryStaff   PantryStaff @relation(fields: [pantryStaffId], references: [id])
 }
 
 model DeliveryPersonnel {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Param, Body } from '@nestjs/common';
 import { PantryService } from './pantry.service';
 import { CreatePantryDto } from './dto/create-pantry-staff.dto';
 import { UpdatePantryDto } from './dto/update-pantry-staff.dto';
@@ -34,4 +34,28 @@ export class PantryController {
   async deletePantryStaff(@Param('id') id: string) {
     return this.pantryService.remove(id);
   }
+
+  @Post('assign-task')
+  async assignTask(
+      @Body() { pantryStaffId, description }: { pantryStaffId: string; description: string },
+  ) {
+      return this.pantryService.assignTask(pantryStaffId, description);
+  }
+
+
+  @Get(':id/tasks')
+  async getTasks(@Param('id') pantryStaffId: string) {
+      return this.pantryService.getTasksForPantryStaff(pantryStaffId);
+  }
+
+  @Patch('update-task/:id')
+  async updateTaskStatus(
+      @Param('id') taskId: string,
+      @Body() { status }: { status: string },
+  ) {
+      return this.pantryService.updateTaskStatus(taskId, status);
+  }
+
+
+
 }
