@@ -19,6 +19,7 @@ export class PatientService {
     return this.prisma.patient.findMany({
       include: {
         dietChart: true, 
+        DeliveryTask : true,
       },
     });
   }

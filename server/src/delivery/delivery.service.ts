@@ -19,13 +19,26 @@ export class DeliveryService {
     return this.prisma.deliveryPersonnel.findMany(
       {
         include: {
-          tasks: true,
+          tasks: {
+            include: {
+              DeliveryStatus: true,  
+            }
+          },
         },
       }
     );
   }
 
   async assignDeliveryTask(patientId: string, deliveryPersonnelId: string, notes?: string) {
+    // Check if patient exists
+    const patient = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+    });
+  
+    if (!patient) {
+      throw new Error("Patient not found");
+    }
+  
     // Ensure delivery personnel exists
     const deliveryPersonnel = await this.prisma.deliveryPersonnel.findUnique({
       where: { id: deliveryPersonnelId },
@@ -35,32 +48,89 @@ export class DeliveryService {
       throw new Error("Delivery personnel not found");
     }
   
-    // Assign the task
-    return this.prisma.deliveryTask.create({
+    // Assign the delivery task
+    const deliveryTask = await this.prisma.deliveryTask.create({
       data: {
         patientId,
         deliveryPersonnelId,
         notes,
-        status: "In Transit",
+        status: "Pending",
       },
     });
+
+    const patientDetail = await this.prisma.patient.findUnique({
+      where: { id: patientId },
+      include: {
+        dietChart: true,  // Include the diet chart
+      },
+    });
+
+
+    if (!patientDetail?.dietChart || patientDetail.dietChart.length === 0) {
+      throw new Error("No diet chart found for the patient");
+    }
+  
+    // Create the initial delivery status for the task
+    await this.prisma.deliveryStatus.create({
+      data: {
+        deliveryTaskId: deliveryTask.id, // Linking the DeliveryTask
+        dietChartId: patientDetail.dietChart[0].id, // Link to the patient's DietChart, if available
+        status: "Pending",
+        deliveryTime: null,
+      },
+    });
+  
+    // Return the created task
+    return deliveryTask;
   }
+
+
 
 
 
   async updateDeliveryStatus(taskId: string, status: string) {
+    // Validate status
     if (!["Pending", "In Transit", "Delivered"].includes(status)) {
       throw new Error("Invalid delivery status");
     }
   
-    return this.prisma.deliveryTask.update({
+    // Fetch the delivery task
+    const deliveryTask = await this.prisma.deliveryTask.findUnique({
+      where: { id: taskId },
+      include: { DeliveryStatus: true }, // Include DeliveryStatus to ensure it exists
+    });
+  
+    if (!deliveryTask) {
+      throw new Error("Delivery task not found");
+    }
+  
+    // Update the delivery task status
+    const statusUpdate = await this.prisma.deliveryTask.update({
       where: { id: taskId },
       data: {
         status,
-        deliveredAt: status === "Delivered" ? new Date() : null,
       },
     });
+  
+    // Find the first delivery status linked to this task
+    const deliveryStatus = deliveryTask.DeliveryStatus[0]; // Assuming a single deliveryStatus, or adjust logic accordingly
+  
+    if (!deliveryStatus) {
+      throw new Error("No delivery status found for this task");
+    }
+  
+    // Update the delivery status
+    await this.prisma.deliveryStatus.update({
+      where: { id: deliveryStatus.id },  // Update by deliveryStatus ID, not task ID
+      data: {
+        status,
+        deliveryTime: new Date(),
+      },
+    });
+  
+    return statusUpdate;
   }
+  
 
 
   async getDeliveryTasksByPersonnel(personnelId: string) {

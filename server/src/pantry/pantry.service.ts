@@ -20,7 +20,7 @@ export class PantryService {
       include: {
         tasks: {
           include: {
-            dietChart: true,  // Include diet chart if exists
+            dietChart: true,  
           },
         },
       },
