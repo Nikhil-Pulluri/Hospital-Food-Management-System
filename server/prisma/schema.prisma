@@ -26,6 +26,8 @@ model Patient {
   allergies  String[]
   disease    String
   dietChart  DietChart[]
+
+  DeliveryTask DeliveryTask[]
 }
 
 model DietChart {
@@ -60,10 +62,23 @@ model PantryTask {
   dietChart     DietChart?  @relation(fields: [dietChartId], references: [id])
 }
 
+model DeliveryTask {
+  id                  String            @id @default(auto()) @map("_id") @db.ObjectId
+  patientId           String
+  patient             Patient           @relation(fields: [patientId], references: [id])
+  deliveryPersonnelId String
+  deliveryPersonnel   DeliveryPersonnel @relation(fields: [deliveryPersonnelId], references: [id])
+  status              String            @default("Pending") // "Pending", "Delivered"
+  assignedAt          DateTime          @default(now())
+  deliveredAt         DateTime?
+  notes               String?
+}
+
 model DeliveryPersonnel {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  id      String         @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   contact String
+  tasks   DeliveryTask[]
 }
 
 model DeliveryStatus {
