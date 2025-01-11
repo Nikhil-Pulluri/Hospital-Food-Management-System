@@ -34,6 +34,14 @@ export class PatientService {
     });
   }
 
+
+  async updatePatient(id: string, updatePatientDto: Partial<Patient>): Promise<Patient> {
+    return this.prisma.patient.update({
+      where: { id },
+      data: updatePatientDto,
+    });
+  }
+
   //  delete a patient by ID method 
   async remove(id: string): Promise<Patient> {
     return this.prisma.patient.delete({
