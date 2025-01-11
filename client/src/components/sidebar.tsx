@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { Users, Truck, LayoutDashboard, ChefHat, Settings } from 'lucide-react'
+import { Users, Truck, LayoutDashboard, ChefHat } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 

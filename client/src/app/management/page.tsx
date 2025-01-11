@@ -27,7 +27,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">356</div>
-            <p className="text-xs text-muted-foreground">Today's total</p>
+            <p className="text-xs text-muted-foreground">Today&apos;s total</p>
           </CardContent>
         </Card>
 
@@ -73,7 +73,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-foreground">Delivery Status</CardTitle>
-            <CardDescription className="text-muted-foreground">Today's meal delivery progress</CardDescription>
+            <CardDescription className="text-muted-foreground">Today&apos;s meal delivery progress</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">Loading delivery status...</p>

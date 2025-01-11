@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +9,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ChevronDown, ChevronRight, PlusCircle, Edit, Plus } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import React from 'react'
+
+interface DietChart {
+  id: string
+  patientId: string
+  morning: string
+  evening: string
+  night: string
+  notes?: string | null
+}
+
+interface DeliveryTask {
+  id: string
+  patientId: string
+  deliveryPersonnelId: string
+  status: string // e.g., "Pending", "Delivered"
+  assignedAt: string // ISO format date
+  notes?: string | null
+}
 
 interface Patient {
   id: string
@@ -22,11 +40,14 @@ interface Patient {
   floor: string
   allergies: string[]
   disease: string
-  dietChart: any[] // Replace with proper type when available
+  dietChart: DietChart[]
+  DeliveryTask: DeliveryTask[] // Replace with proper type when available
 }
 
-const PatientDialog = ({ open, setOpen, editingPatient, onSave }: { open: boolean; setOpen: (open: boolean) => void; editingPatient: Patient | null; onSave: (patient: Patient) => void }) => {
+const PatientDialog = ({ open, setOpen, editingPatient }: { open: boolean; setOpen: (open: boolean) => void; editingPatient: Patient | null; onSave: (patient: Patient) => void }) => {
   const [formData, setFormData] = useState<Partial<Patient>>({})
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL
 
   useEffect(() => {
     if (editingPatient) {
@@ -46,19 +67,30 @@ const PatientDialog = ({ open, setOpen, editingPatient, onSave }: { open: boolea
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/patients`, {
-        method: editingPatient ? 'PUT' : 'POST', // Use PUT for editing, POST for adding
+      // Create a copy of formData without the `id`, `dietChart`, and `DeliveryTask` fields
+      const { id, dietChart, DeliveryTask, ...dataToSend } = formData
+
+      console.log(dietChart, DeliveryTask)
+
+      // Use PUT for editing an existing patient, POST for adding a new one
+      const method = editingPatient ? 'PUT' : 'POST'
+
+      // If it's an edit (PUT), include the `id` in the URL
+      const url = editingPatient ? `${backendUrl}/patients/${id}` : `${backendUrl}/patients`
+
+      const response = await fetch(url, {
+        method: method, // Use PUT or POST depending on editing status
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData), // Sending the form data to the backend
+        body: JSON.stringify(dataToSend), // Send the data without `id`, `dietChart`, and `DeliveryTask`
       })
 
       if (!response.ok) {
         throw new Error('Failed to save patient data')
       }
 
-      // Handle success (e.g., close dialog, reset form)
+      // Handle success: close dialog and reset form
       setOpen(false)
       setFormData({}) // Reset form after saving
     } catch (error) {
@@ -142,57 +174,6 @@ const PatientDialog = ({ open, setOpen, editingPatient, onSave }: { open: boolea
   )
 }
 
-// const ExpandedRow = ({ patient }: { patient: Patient }) => (
-//   <TableRow>
-//     <TableCell colSpan={8}>
-//       <div className="p-4">
-//         <Tabs defaultValue="details">
-//           <TabsList>
-//             <TabsTrigger value="details">Additional Details</TabsTrigger>
-//             <TabsTrigger value="diet">Diet Plans</TabsTrigger>
-//           </TabsList>
-//           <TabsContent value="details" className="space-y-4">
-//             <div className="grid grid-cols-2 gap-4">
-//               <div>
-//                 <Label>Emergency Contact</Label>
-//                 <div className="mt-1">{patient.emergency}</div>
-//               </div>
-//               <div>
-//                 <Label>Floor</Label>
-//                 <div className="mt-1">{patient.floor}</div>
-//               </div>
-//               <div>
-//                 <Label>Allergies</Label>
-//                 <div className="mt-1">
-//                   {patient.allergies.map((allergy, index) => (
-//                     <span key={index} className="inline-block bg-secondary text-secondary-foreground rounded-full px-3 py-1 text-sm mr-2">
-//                       {allergy}
-//                     </span>
-//                   ))}
-//                 </div>
-//               </div>
-//             </div>
-//           </TabsContent>
-//           <TabsContent value="diet" className="space-y-4">
-//             <div className="flex justify-between items-center">
-//               <h3 className="text-lg font-semibold">Diet Plans</h3>
-//               <Button size="sm">
-//                 <Plus className="h-4 w-4 mr-2" />
-//                 Add Diet Plan
-//               </Button>
-//             </div>
-//             {patient.dietChart.length === 0 ? (
-//               <div className="text-center py-8 text-muted-foreground">No diet plans added yet</div>
-//             ) : (
-//               <div className="space-y-4">{/* Diet plans will be listed here */}</div>
-//             )}
-//           </TabsContent>
-//         </Tabs>
-//       </div>
-//     </TableCell>
-//   </TableRow>
-// )
-
 const ExpandedRow = ({ patient }: { patient: Patient }) => (
   <TableRow>
     <TableCell colSpan={8}>
@@ -236,7 +217,7 @@ const ExpandedRow = ({ patient }: { patient: Patient }) => (
               <div className="text-center py-8 text-muted-foreground">No diet plans added yet</div>
             ) : (
               <div className="space-y-4">
-                {patient.dietChart.map((diet, index) => (
+                {patient.dietChart.map((diet) => (
                   <div key={diet.id} className="p-4 border border-muted rounded-lg">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -288,7 +269,11 @@ export default function PatientsPage() {
   const toggleRow = (patientId: string) => {
     setExpandedRows((prev) => {
       const updated = new Set(prev)
-      updated.has(patientId) ? updated.delete(patientId) : updated.add(patientId)
+      if (updated.has(patientId)) {
+        updated.delete(patientId)
+      } else {
+        updated.add(patientId)
+      }
       return updated
     })
   }
@@ -312,35 +297,44 @@ export default function PatientsPage() {
         .catch((error) => console.error(error))
     } else {
       // Add new patient
-      fetch('/patients', {
+      fetch(`${backendUrl}/patients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patient),
       })
         .then((response) => response.json())
-        .then((data) => setPatients((prev) => [...prev, data]))
+        .then((newPatient) => {
+          setPatients((prev) => [...prev, newPatient])
+        })
         .catch((error) => console.error(error))
     }
+    setOpen(false)
+    setEditingPatient(null)
+  }
+
+  const handleDelete = (patientId: string) => {
+    fetch(`${backendUrl}/patients/${patientId}`, {
+      method: 'DELETE',
+    })
+      .then(() => {
+        setPatients((prev) => prev.filter((patient) => patient.id !== patientId))
+      })
+      .catch((error) => console.error(error))
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Patient Management</h1>
-        <PatientDialog open={open} setOpen={setOpen} editingPatient={editingPatient} onSave={handleSave} />
-      </div>
-
+    <div>
+      <h1 className="text-2xl font-bold mb-4">Patient Management</h1>
+      <PatientDialog open={open} setOpen={setOpen} editingPatient={editingPatient} onSave={handleSave} />
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[40px]"></TableHead>
-            <TableHead>Patient Name</TableHead>
-            <TableHead>Age</TableHead>
-            <TableHead>Gender</TableHead>
-            <TableHead>Room</TableHead>
-            <TableHead>Bed</TableHead>
-            <TableHead>Disease</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
+            <TableCell>Name</TableCell>
+            <TableCell>Age</TableCell>
+            <TableCell>Gender</TableCell>
+            <TableCell>Contact</TableCell>
+            <TableCell>Room</TableCell>
+            <TableCell>Actions</TableCell>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -348,19 +342,20 @@ export default function PatientsPage() {
             <React.Fragment key={patient.id}>
               <TableRow>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => toggleRow(patient.id)}>
-                    {expandedRows.has(patient.id) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </Button>
+                  <button onClick={() => toggleRow(patient.id)}>{expandedRows.has(patient.id) ? <ChevronDown /> : <ChevronRight />}</button> {patient.name}
                 </TableCell>
-                <TableCell>{patient.name}</TableCell>
                 <TableCell>{patient.age}</TableCell>
                 <TableCell>{patient.gender}</TableCell>
-                <TableCell>{patient.roomNumber}</TableCell>
-                <TableCell>{patient.bedNumber}</TableCell>
-                <TableCell>{patient.disease}</TableCell>
+                <TableCell>{patient.contact}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(patient)}>
-                    <Edit className="h-4 w-4" />
+                  {patient.roomNumber} - {patient.bedNumber}
+                </TableCell>
+                <TableCell>
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(patient)}>
+                    <Edit className="h-4 w-4 mr-1" /> Edit
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(patient.id)}>
+                    Delete
                   </Button>
                 </TableCell>
               </TableRow>

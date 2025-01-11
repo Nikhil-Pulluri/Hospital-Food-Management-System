@@ -206,7 +206,7 @@ export default function PantryStaffPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {staffMembers.map((staff, index) => (
+          {staffMembers.map((staff) => (
             <React.Fragment key={staff.id}>
               {/* Use staff.id for the main row */}
               <TableRow>
