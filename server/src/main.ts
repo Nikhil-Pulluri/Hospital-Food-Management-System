@@ -22,7 +22,7 @@ async function bootstrap() {
 
   // Enable CORS for the frontend (localhost:3000 in your case)
   app.enableCors({
-    origin: ['http://localhost:3000', "https://hospital-food-management-system-ten.vercel.app/"], // Your frontend URL
+    origin: ['http://localhost:3000', "https://hospital-food-management-system-ten.vercel.app"], // Your frontend URL
     methods: 'GET,POST,PUT,DELETE,PATCH', // Methods allowed
     allowedHeaders: 'Content-Type, Authorization', // Headers allowed
   });
